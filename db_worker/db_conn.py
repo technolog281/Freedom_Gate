@@ -1,5 +1,38 @@
 from pymongo import MongoClient
 from loguru import logger
+import yaml
+from yaml.loader import SafeLoader
+
+
+class database:
+    def __init__(self, proxy_type):
+        with open('conn.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+        self.url = data['db_conn'][0]['url']
+        self.db = data['db_conn'][0]['db']
+        self.user = data['db_conn'][0]['user']
+        self.passwd = data['db_conn'][0]['passwd']
+        self.proxy_type = proxy_type
+        self.first_doc = data['db_conn'][0]['fd']
+        logger.info('Database connection established')
+
+    def connection(self):
+        connection_string = 'mongodb://' + self.user + ':' + self.passwd + '@' + self.url + '/' + \
+                            '?authSource=admin&retryWrites=true&w=majority'
+        print(connection_string)
+        client = MongoClient(connection_string)
+        db = client.freedom_gate
+        return db
+
+    def db_init(self):
+        freedom_db = self.connection()[self.db]
+        from pymongo.errors import DuplicateKeyError
+        try:
+            init_commit = freedom_db.insert_one(self.first_doc)
+            logger.debug('Attention: DB freedom_gate was inserted')
+            return init_commit
+        except DuplicateKeyError:
+            logger.error('It seems that such a database already exists.')
 
 
 def mongo_export(export_dict: dict):
@@ -49,8 +82,5 @@ def hidemy_export():
                 logger.info('It seems that dictionary in MongoDB yet, update document, wait...')
 
 
-hidemy_export()
-
-
-
-
+dab = database('http')
+print(dab.db_init())

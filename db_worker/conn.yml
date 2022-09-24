@@ -1,0 +1,6 @@
+db_conn:
+  - url: '192.168.0.24:36016'
+    user: dbmanager
+    passwd: '3b9j?Uk3'
+    db: freedom_gate
+    fd: {'_id': '1', 'name': 'initial_document'}

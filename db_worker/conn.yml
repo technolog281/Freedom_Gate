@@ -4,3 +4,4 @@ db_conn:
     passwd: '3b9j?Uk3'
     db: freedom_gate
     fd: {'_id': '1', 'name': 'initial_document'}
+    collections: ['http', 'https', 'socks']

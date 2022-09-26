@@ -1,35 +1,30 @@
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from loguru import logger
 
 
 hidemy_base_url = 'https://hidemy.name'
-driver = webdriver.Chrome(ChromeDriverManager().install())
 
 
-def hidemy_name_parse(url):
-    proxy_dict = {}
-    # Функция извлекает список всех доступных прокси, сохраняет в словарь.
-    hmn_list = []
-    driver.get(url)
-    requiredHtml = driver.page_source
-    soup = BeautifulSoup(requiredHtml, 'html5lib')
-    table = soup.findChildren('table')
-    rows = table[0].findChildren(['thead', 'tr'])
-    for row in rows:
-        cells = row.findChildren('td')
-        for cell in cells:
-            hmn_list.append(cell.text)
-    del hmn_list[0:14]
-    while len(hmn_list) >= 1:
-        ip_key = hmn_list[0]
-        attr_value = []
-        for i in range(1, 7):
-            attr_value.append(hmn_list[i])
-        proxy_dict[ip_key] = attr_value
-        del hmn_list[0:7]
-    return proxy_dict
+# def hidemy_name_parse(url):
+#     proxy_dict = {}
+#     # Функция извлекает список всех доступных прокси, сохраняет в словарь.
+#     hmn_list = []
+#     soup = BeautifulSoup(requiredHtml, 'html5lib')
+#     table = soup.findChildren('table')
+#     rows = table[0].findChildren(['thead', 'tr'])
+#     for row in rows:
+#         cells = row.findChildren('td')
+#         for cell in cells:
+#             hmn_list.append(cell.text)
+#     del hmn_list[0:14]
+#     while len(hmn_list) >= 1:
+#         ip_key = hmn_list[0]
+#         attr_value = []
+#         for i in range(1, 7):
+#             attr_value.append(hmn_list[i])
+#         proxy_dict[ip_key] = attr_value
+#         del hmn_list[0:7]
+#     return proxy_dict
 
 
 def page_search_hmn(url):
@@ -60,3 +55,6 @@ def parse_all():
     driver.close()
     return final_list
 
+
+if __name__ == '__main__':
+    print(page_search_hmn(hidemy_base_url))

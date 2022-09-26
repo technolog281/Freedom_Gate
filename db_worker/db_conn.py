@@ -5,15 +5,17 @@ from yaml.loader import SafeLoader
 
 
 class database:
+    # Класс, объединяющий в себе весь функционал работы с БД Mongo необходимый для работы сервиса Freedom_Gate.
     def __init__(self):
         with open('conn.yml') as f:
             data = yaml.load(f, Loader=SafeLoader)
-        self.url = data['db_conn'][0]['url']
-        self.db = data['db_conn'][0]['db']
-        self.user = data['db_conn'][0]['user']
-        self.passwd = data['db_conn'][0]['passwd']
-        self.first_doc = data['db_conn'][0]['fd']
-        self.collections = data['db_conn'][0]['collections']
+            db_params = data['db_conn'][0]
+        self.url = db_params['url']
+        self.db = db_params['db']
+        self.user = db_params['user']
+        self.passwd = db_params['passwd']
+        self.first_doc = db_params['fd']
+        self.collections = db_params['collections']
 
     def connection_to_mongo(self):
         # Функция создает подключение к БД Mongo.

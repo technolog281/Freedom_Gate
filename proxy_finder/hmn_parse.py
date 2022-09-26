@@ -1,28 +1,29 @@
 from playwright.sync_api import sync_playwright
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
+from loguru import logger
 
 
-hmn_url = 'https://hidemy.name/ru/proxy-list/?start=0#list'
+hidemy_base_url = 'https://hidemy.name'
 useragent = UserAgent().chrome
 
 
-class html_exec:
-    def __init__(self, browser_type, url):
-        self.browser_type = browser_type
-        self.url = url
+def get_content(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(user_agent=useragent)
+        page = context.new_page()
+        page.goto(url)
+        html = page.content()
+        soup = BeautifulSoup(html, 'html5lib')
+        return soup
 
 
-with sync_playwright() as p:
-    proxy_dict = {}
+def hidemy_name_parse(url):
+    # Функция извлекает список всех доступных прокси, сохраняет в словарь.
     hmn_list = []
-    browser = p.chromium.launch(headless=True)
-    context = browser.new_context(user_agent=useragent)
-    page = context.new_page()
-    page.goto(hmn_url)
-    html = page.content()
-    soup = BeautifulSoup(html, 'html5lib')
-    table = soup.findChildren('table')
+    proxy_dict = {}
+    table = get_content(url).findChildren('table')
     rows = table[0].findChildren(['thead', 'tr'])
     for row in rows:
         cells = row.findChildren('td')
@@ -36,5 +37,30 @@ with sync_playwright() as p:
             attr_value.append(hmn_list[i])
         proxy_dict[ip_key] = attr_value
         del hmn_list[0:7]
-    print(proxy_dict)
+    return proxy_dict
+
+
+def page_search_hmn(url):
+    # Функция извлекает значение максимальной страницы списка прокси.
+    table = get_content(url).find_all('div', {'class': 'pagination'})
+    link = table[0].find_all('a', href=True)
+    return link[-2]['href']
+
+
+def parse_all():
+    final_list = []
+    proxy_url = hidemy_base_url + '/ru/proxy-list/'
+    logger.info('Search max_page element, wait...')
+    max_page_url = page_search_hmn(proxy_url)
+    max_item = max_page_url.split('start=')[1].split('#')[0]
+    max_page = int(max_item)
+    work_page = 0
+    while work_page <= int(max_page):
+        init_page = hidemy_base_url + f'/ru/proxy-list/?start={work_page}#list'
+        parse_dict = hidemy_name_parse(init_page)
+        num = work_page / 64
+        logger.info(f'Parse hidemy.name proxy-list number {num}')
+        final_list.append(parse_dict)
+        work_page += 64
+    return final_list
 

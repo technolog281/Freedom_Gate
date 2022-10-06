@@ -22,7 +22,6 @@ class database:
         connection_string = 'mongodb://' + self.user + ':' + self.passwd + '@' + self.url + '/' + \
                             '?authSource=admin&retryWrites=true&w=majority'
         client = MongoClient(connection_string)
-        logger.info('Database connection established')
         return client
 
     def db_init(self):
@@ -45,12 +44,11 @@ class database:
         freedom_db = self.connection_to_mongo()[self.db]
         try:
             freedom_db[proxy_type].insert_one(export_dict)
-            logger.info('Document append successful')
         except DuplicateKeyError:
-            logger.info('It seems that such a document already exists')
+            logger.info(f'It seems that such a document already exists: {export_dict["_id"]}')
             status_proxy = freedom_db[proxy_type].find_one({'_id': export_dict['_id']})['status']
             if export_dict['status'] == status_proxy:
-                logger.info('The document does not need to be updated')
+                logger.info(f'The document {export_dict["_id"]} does not need to be updated')
             else:
                 freedom_db[proxy_type].replace_one({'_id': export_dict['_id']}, export_dict, upsert=False)
                 logger.info('Document update')

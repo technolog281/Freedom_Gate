@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from loguru import logger
-
+from db_worker.db_conn import database
 
 hidemy_base_url = 'https://hidemy.name'
 useragent = UserAgent().chrome
@@ -13,7 +13,7 @@ def get_content(url):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent=useragent)
         page = context.new_page()
-        page.goto(url)
+        page.goto(url, timeout=0, wait_until='load')
         html = page.content()
         soup = BeautifulSoup(html, 'html5lib')
         return soup
@@ -47,8 +47,7 @@ def page_search_hmn(url):
     return link[-2]['href']
 
 
-def parse_all():
-    final_list = []
+def db_export():
     proxy_url = hidemy_base_url + '/ru/proxy-list/'
     logger.info('Search max_page element, wait...')
     max_page_url = page_search_hmn(proxy_url)
@@ -59,8 +58,22 @@ def parse_all():
         init_page = hidemy_base_url + f'/ru/proxy-list/?start={work_page}#list'
         parse_dict = hidemy_name_parse(init_page)
         num = work_page / 64
-        logger.info(f'Parse hidemy.name proxy-list number {num}')
-        final_list.append(parse_dict)
         work_page += 64
-    return final_list
-
+        logger.info(f'Parse hidemy.name proxy-list page number {num}')
+        for key in parse_dict:
+            export_dict = {'_id': key,
+                           'ip': key,
+                           'port': parse_dict[key][0],
+                           'location': parse_dict[key][1],
+                           'status': 1,
+                           'proxy_type': parse_dict[key][3].replace(' ', '').replace(',', '/'),
+                           'timing': parse_dict[key][2].replace(' мс', '')
+                           }
+            db = database()
+            if 'HTTP' == export_dict['proxy_type']:
+                db.mongo_export(export_dict, 'http')
+            elif 'HTTPS' == export_dict['proxy_type']:
+                db.mongo_export(export_dict, 'https')
+            elif 'SOCKS' in export_dict['proxy_type']:
+                db.mongo_export(export_dict, 'socks')
+        logger.info('Data successfully distributed between DB collections')
